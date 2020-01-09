@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'sorl.thumbnail',
     'users',
     'video',
+    'comment',
+    'myadmin',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +55,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'videoproject.urls'
+
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'upload').replace('\\','/')
+MEDIA_URL = '/upload/'
 
 TEMPLATES = [
     {

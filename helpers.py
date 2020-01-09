@@ -1,5 +1,7 @@
-
-from django.http import HttpResponseBadRequest
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseBadRequest,HttpResponse
+from django.views.generic import View
+from django.shortcuts import redirect
 def  get_page_list(paginator,page):
     page_list = []
 
@@ -29,3 +31,31 @@ def ajax_required(f):
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__
     return wrap
+
+class AuthorRequiredMixin(View):
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj != self.request.user:
+            raise PermissionDenied
+
+        return super().dispatch(request, *args, **kwargs)
+
+class SuperUserRequiredMixin(View):
+    """
+    超级用户拦截器
+    """
+    def dispatch(self, request, *args, **kwargs):
+        if not self.request.user.is_superuser:
+            return HttpResponse('无权限')
+
+        return super().dispatch(request, *args, **kwargs)
+
+class AdminUserRequiredMixin(View):
+    """
+    管理员拦截器
+    """
+    def dispatch(self, request, *args, **kwargs):
+        if not self.request.user.is_staff:
+            return redirect('myadmin:login')
+
+        return super().dispatch(request, *args, **kwargs)

@@ -1,12 +1,15 @@
-from django.shortcuts import render,get_object_or_404
+from django.shortcuts import render,get_object_or_404,redirect
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
-# Create your views here.
+from django.core.paginator import Paginator,PageNotAnInteger
+from users.models import User
 from.models import Classification
 from django.views import generic
 from .models import Video
-from helpers import get_page_list,ajax_required
+from helpers import get_page_list,ajax_required,AuthorRequiredMixin
+from .forms import CommentForm
 class IndexView(generic.ListView):
+
     model = Video
     template_name = 'video/index.html'
     context_object_name = 'video_list'
@@ -54,17 +57,22 @@ class SearchListView(generic.ListView):
         return context
 
 class VideoDetailView(generic.DetailView):
-    def increase_view_count(self):
-        self.view_count += 1
-        self.save(update_fields=['view_count'])
+    model = Video
+    template_name = 'video/detail.html'
 
     def get_object(self, queryset=None):
         obj = super().get_object()
-        obj.increase_view_count()  # 调用自增函数
+        obj.increase_view_count()
         return obj
 
-    model = Video
-    template_name = 'video/detail.html'
+    def get_context_data(self, **kwargs):
+        context = super(VideoDetailView, self).get_context_data(**kwargs)
+        form = CommentForm()
+        recommend_list = Video.objects.get_recommend_list()
+        context['form'] = form
+        context['recommend_list'] = recommend_list
+        return context
+
 
 
 @ajax_required
@@ -77,7 +85,6 @@ def like(request):
     user = request.user
     video.switch_like(user)
     return JsonResponse({"code": 0, "likes": video.count_likers(), "user_liked": video.user_liked(user)})
-
 
 
 

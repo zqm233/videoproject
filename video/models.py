@@ -2,10 +2,35 @@ from django.db import models
 from videoproject import settings
 # Create your models here.
 
+class VideoQuerySet(models.query.QuerySet):
+
+    def get_count(self):
+        return self.count()
+
+    def get_published_count(self):
+        return self.filter(status=0).count()
+
+    def get_not_published_count(self):
+        return self.filter(status=1).count()
+
+    def get_published_list(self):
+        return self.filter(status=0).order_by('-create_time')
+
+    def get_search_list(self, q):
+        if q:
+            return self.filter(title__contains=q).order_by('-create_time')
+        else:
+            return self.order_by('-create_time')
+
+    def get_recommend_list(self):
+        return self.filter(status=0).order_by('-view_count')[:4]
 class Classification(models.Model):
     list_display = ("title",)
     title = models.CharField(max_length=100,blank=True, null=True)
     status = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.title
 
     class Meta:
         db_table = "v_classification"
@@ -28,6 +53,7 @@ class Video(models.Model):
                                    blank=True, related_name="liked_videos")
     collected = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                        blank=True, related_name="collected_videos")
+    objects = VideoQuerySet.as_manager()
 
     def switch_like(self, user):
         if user in self.liked.all():
@@ -40,7 +66,29 @@ class Video(models.Model):
         self.save(update_fields=['view_count'])
 
 
-class VideoQuerySet(models.query.QuerySet):
-    def get_recommend_list(self):
-        return self.filter(status=0).order_by('-view_count')[:4]
+
+    def count_likers(self):
+        return self.liked.count()
+
+    def user_liked(self, user):
+        if user in self.liked.all():
+            return 0
+        else:
+            return 1
+
+    def switch_collect(self, user):
+        if user in self.collected.all():
+            self.collected.remove(user)
+
+        else:
+            self.collected.add(user)
+
+    def count_collecters(self):
+        return self.collected.count()
+
+    def user_collected(self, user):
+        if user in self.collected.all():
+            return 0
+        else:
+            return 1
 

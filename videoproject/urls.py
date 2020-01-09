@@ -16,11 +16,16 @@ Including another URLconf
 from users import views
 from django.contrib import admin
 from django.urls import path,include
-
+from video.views import IndexView
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('myadmin/', include('myadmin.urls')),
     path('users/',include('users.urls')),
     path('video/',include('video.urls')),
+    path('comment',include('comment.urls')),
+    path('', IndexView.as_view(), name='home'), # 默认首页
 
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
